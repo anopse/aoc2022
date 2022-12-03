@@ -58,8 +58,8 @@ fn find_repeated_char3(s1: &str, s2: &str, s3: &str) -> Option<char> {
 
 // solve the problem : Input -> Output
 //  foreach triplet of strings, find the first character that is repeated in all strings and map it to a number then sum all numbers
-fn solve_part2(_input: &InputPart2) -> Output {
-    _input.iter().map(| (s1, s2, s3) | {
+fn solve_part2(input: &InputPart2) -> Output {
+    input.iter().map(| (s1, s2, s3) | {
         find_repeated_char3(s1, s2, s3).map(map_char).unwrap_or(0)
     }).sum()
 }
