@@ -3,13 +3,13 @@ use std::io::Read;
 use regex::Regex;
 use im::vector::Vector;
 
-type Elem = u32;
+type Elem = char;
 type State = Vector<Vector<Elem>>;
 
 struct Instruction {
-    count: u8,
-    from: u8,
-    to: u8
+    count: usize,
+    from: usize,
+    to: usize
 }
 
 type InputPart1 = (Vec<Instruction>, State);
@@ -47,13 +47,13 @@ fn parse_state(state_part: &str) -> State {
         state_part
             .lines()
             .map(| l | {
-                let captures: Vec<Elem> = state_regex.captures(l).unwrap().iter().skip(1).map(| c | c.unwrap().as_str().chars().next().unwrap() as u32).collect();
+                let captures: Vec<Elem> = state_regex.captures(l).unwrap().iter().skip(1).map(| c | c.unwrap().as_str().chars().next().unwrap()).collect();
                 captures
             }).fold(zero_state, | state, captures | {
                 captures
                     .iter()
                     .enumerate()
-                    .filter(| (_idx, elem) | (char::from_u32(**elem).unwrap().is_alphabetic()))
+                    .filter(| (_idx, elem) | (*elem).is_alphabetic())
                     .fold(state, | state, (idx, elem) | {
                         let mut new_value = state[idx].clone();
                         let mut new_state = state.clone();
@@ -76,7 +76,7 @@ fn parse_instructions(instruction_part: &str) -> Vec<Instruction> {
         .replace(" to ", ",")
         .lines()
         .map(|l| {
-            let a = l.split(",").map(| p | p.parse::<u8>().unwrap()).collect::<Vec<u8>>();
+            let a = l.split(",").map(| p | p.parse::<usize>().unwrap()).collect::<Vec<usize>>();
 
             Instruction { count: a[0], from: a[1] - 1, to: a[2] - 1 }
         })
@@ -92,7 +92,7 @@ fn parse_input_part1(input: &str) -> InputPart1 {
     (instruction_part, state)
 }
 
-const parse_input_part2: fn(&str) -> InputPart2 = parse_input_part1;
+const PARSE_INPUT_PART2: fn(&str) -> InputPart2 = parse_input_part1;
 
 fn exec_instruction(instruction: &Instruction, state: &State) -> State {
     let mut new_state = state.clone();
@@ -118,7 +118,6 @@ fn get_top_line(state: &State) -> String {
     state
     .iter()
     .map(| a | a.last().unwrap())
-    .map(| e | char::from_u32(*e).unwrap())
     .collect::<String>()
 }
 
@@ -177,7 +176,7 @@ fn read_input() -> String {
 fn main() {
     let raw_input = read_input();
     let input_part1 = parse_input_part1(&raw_input);
-    let input_part2 = parse_input_part2(&raw_input);
+    let input_part2 = PARSE_INPUT_PART2(&raw_input);
     let output_part1 = solve_part1(&input_part1);
     let output_part2 = solve_part2(&input_part2);
     print_output(&output_part1, &output_part2);
