@@ -28,6 +28,7 @@ mark(numbers.transpose.map(_.reverse), (x, y) => (y, lineCount - x - 1))
 
 val countMarked = marked.map(_.count(_ == true)).sum
 
+// display board
 for y <- 0 until lineCount do
     for x <- 0 until columnCount do
         print(if marked(y)(x) then "X" else numbers(y)(x))
@@ -48,16 +49,16 @@ def score(start: Int, l: List[Int]): Int =
 
 def scoreAllDir(l: List[List[Int]], x: Int, y: Int): Int =
     val start = l(y)(x)
-    print(s"($x, $y) ($start) : ")
     val leftToRight = score(start, l(y).drop(x+1))
-    print(s"$leftToRight (${l(y).drop(x+1).mkString(",")}) * ")
     val rightToLeft = score(start, l(y).reverse.drop(columnCount - x))
-    print(s"$rightToLeft (${l(y).reverse.drop(columnCount - x).mkString(",")}) * ")
     val topToBottom = score(start, l.transpose(implicitly)(x).drop(y + 1))
-    print(s"$topToBottom (${l.transpose(implicitly)(x).drop(y + 1).mkString(",")}) * ")
     val bottomToTop = score(start, l.transpose(implicitly)(x).reverse.drop(lineCount - y))
-    print(s"$bottomToTop (${l.transpose(implicitly)(x).reverse.drop(lineCount - y).mkString(",")}) = ")
     val s = leftToRight * rightToLeft * topToBottom * bottomToTop
+    print(s"($x, $y) ($start) : ")
+    print(s"$leftToRight (${l(y).drop(x+1).mkString(",")}) * ")
+    print(s"$rightToLeft (${l(y).reverse.drop(columnCount - x).mkString(",")}) * ")
+    print(s"$topToBottom (${l.transpose(implicitly)(x).drop(y + 1).mkString(",")}) * ")
+    print(s"$bottomToTop (${l.transpose(implicitly)(x).reverse.drop(lineCount - y).mkString(",")}) = ")
     println(s)
     s
 
