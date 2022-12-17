@@ -263,6 +263,6 @@ val part2Height = mesureHeight(part2State) + removedLines
 //   for example at step 18210 and step 19940
 // between 19940 and 999_999_999_040 there's 578_034_670 cycles
 // we need 960 more steps, 960 more steps ahead of our pattern we add height 1452
-// so : 19940 height is 30687 => 999_999_999_040 height is 1536994218217
+// so : 19940 height is 30687 => 999_999_999_040 height is 1_536_994_218_217
 // 999_999_999_040 + 960 cycles = 1,000,000,000,000
-// height 578_034_670 + 1_452 = 1_536_994_219_669
+// height 1_536_994_218_217 + 1_452 = 1_536_994_219_669
