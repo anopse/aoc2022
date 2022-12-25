@@ -1,8 +1,8 @@
 import scala.util.parsing.combinator._
 import scala.annotation.tailrec
 
-val debugPrint = true
-val isSampleInput = true
+val debugPrint = false
+val isSampleInput = false
 
 def dprintln(o: => Any) = if (debugPrint) println(o)
 def dprintln() = if (debugPrint) println()
@@ -28,8 +28,8 @@ val maxY = upperPart.length
 
 sealed trait Cell
 case class Empty(c: Coord) extends Cell
+case class Wall(c: Coord) extends Cell
 case object Void extends Cell
-case object Wall extends Cell
 
 sealed case class Coord(x: Int, y: Int)
 
@@ -41,7 +41,7 @@ val terrain = {
             val cell = chr match
                 case None => Void
                 case Some(' ') => Void
-                case Some('#') => Wall
+                case Some('#') => Wall(Coord(x, y))
                 case Some('.') => Empty(Coord(x, y))
                 case Some(c) => throw new Exception(s"Unknown cell type: $c")
             m = m + (Coord(x, y) -> cell)
@@ -160,7 +160,7 @@ def printState(state: State): Unit = {
                     val chr = terrain(Coord(x, y)) match {
                         case Empty(_) => '.'
                         case Void => ' '
-                        case Wall => '#'
+                        case Wall(_) => '#'
                     }
                     print(chr)
                 }
@@ -235,14 +235,14 @@ final def simpleDiceFace(face: DiceFace, going: Facing): FaceInstance = {
         case (Back, West) => FaceInstance(Right, Nil)
 
         case (Up, North) => FaceInstance(Back, List(Clockwise, Clockwise))
-        case (Up, East) => FaceInstance(Left, List(Clockwise))
+        case (Up, East) => FaceInstance(Right, List(Clockwise))
         case (Up, South) => FaceInstance(Front, Nil)
-        case (Up, West) => FaceInstance(Right, List(CounterClockwise))
+        case (Up, West) => FaceInstance(Left, List(CounterClockwise))
 
         case (Down, North) => FaceInstance(Front, Nil)
-        case (Down, East) => FaceInstance(Right, List(CounterClockwise))
+        case (Down, East) => FaceInstance(Right, List(CounterClockwise)) // ???
         case (Down, South) => FaceInstance(Back, List(Clockwise, Clockwise))
-        case (Down, West) => FaceInstance(Left, List(Clockwise))
+        case (Down, West) => FaceInstance(Left, List(Clockwise)) // ???
 
         case (Left, North) => FaceInstance(Up, List(Clockwise))
         case (Left, East) => FaceInstance(Front, Nil)
@@ -428,7 +428,7 @@ def dprintFace(face: Map[Coord, Cell]) = {
                 cell match {
                     case Void => print(" ")
                     case Empty(_) => print(".")
-                    case Wall => print("#")
+                    case Wall(_) => print("#")
                 }
             }
             println()
@@ -470,41 +470,41 @@ final def convertCoordinates(coord: Coord, from: DiceFace, to: DiceFace): Coord 
         case (Front, Right) => Coord(0, coord.y)
         case (Front, Left) => Coord(diceSize - 1, coord.y)
         case (Front, Back) => throw new IllegalArgumentException("Cannot convert coordinates from front to back")
-        case (Front, Up) => Coord(coord.x, 0)
-        case (Front, Down) => Coord(coord.x, diceSize - 1)
+        case (Front, Up) => Coord(coord.x, diceSize - 1)
+        case (Front, Down) => Coord(coord.x, 0)
 
-        case (Right, Front) => Coord(coord.y, diceSize - 1)
+        case (Right, Front) => Coord(diceSize - 1, coord.y)
         case (Right, Right) => throw new IllegalArgumentException("Cannot convert coordinates from right to right")
         case (Right, Left) => throw new IllegalArgumentException("Cannot convert coordinates from right to left")
-        case (Right, Back) => Coord(coord.y, 0)
-        case (Right, Up) => Coord(diceSize - 1, coord.x)
-        case (Right, Down) => Coord(0, coord.x)
+        case (Right, Back) => Coord(0, coord.y)
+        case (Right, Up) => Coord(diceSize - 1, diceSize - 1 - coord.x)
+        case (Right, Down) => Coord(diceSize - 1, coord.x)
 
-        case (Left, Front) => Coord(diceSize - 1 - coord.y, 0)
+        case (Left, Front) => Coord(0, coord.y)
         case (Left, Right) => throw new IllegalArgumentException("Cannot convert coordinates from left to right")
         case (Left, Left) => throw new IllegalArgumentException("Cannot convert coordinates from left to left")
-        case (Left, Back) => Coord(diceSize - 1 - coord.y, diceSize - 1)
-        case (Left, Up) => Coord(0, diceSize - 1 - coord.x)
-        case (Left, Down) => Coord(diceSize - 1, diceSize - 1 - coord.x)
+        case (Left, Back) => Coord(diceSize - 1, coord.y)
+        case (Left, Up) => Coord(0, coord.x)
+        case (Left, Down) => Coord(0, diceSize - 1 - coord.x)
 
         case (Back, Front) => throw new IllegalArgumentException("Cannot convert coordinates from back to front")
-        case (Back, Right) => Coord(diceSize - 1, diceSize - 1 - coord.y)
-        case (Back, Left) => Coord(0, diceSize - 1 - coord.y)
+        case (Back, Right) => Coord(0, coord.y)
+        case (Back, Left) => Coord(diceSize - 1, coord.y)
         case (Back, Back) => throw new IllegalArgumentException("Cannot convert coordinates from back to back")
-        case (Back, Up) => Coord(diceSize - 1 - coord.x, diceSize - 1)
-        case (Back, Down) => Coord(diceSize - 1 - coord.x, 0)
+        case (Back, Up) => Coord(diceSize - 1 - coord.x, 0)
+        case (Back, Down) => Coord(diceSize - 1 - coord.x, diceSize - 1)
 
-        case (Up, Front) => Coord(diceSize - 1 - coord.x, coord.y)
-        case (Up, Right) => Coord(coord.y, diceSize - 1 - coord.x)
-        case (Up, Left) => Coord(diceSize - 1 - coord.y, coord.x)
-        case (Up, Back) => Coord(coord.x, diceSize - 1 - coord.y)
+        case (Up, Front) => Coord(coord.x, 0)
+        case (Up, Right) => Coord(coord.y, 0)
+        case (Up, Left) => Coord(coord.y, 0)
+        case (Up, Back) => Coord(diceSize - 1 - coord.x, 0)
         case (Up, Up) => throw new IllegalArgumentException("Cannot convert coordinates from up to up")
         case (Up, Down) => throw new IllegalArgumentException("Cannot convert coordinates from up to down")
 
-        case (Down, Front) => Coord(coord.x, diceSize - 1 - coord.y)
-        case (Down, Right) => Coord(diceSize - 1 - coord.y, coord.x)
-        case (Down, Left) => Coord(coord.y, diceSize - 1 - coord.x)
-        case (Down, Back) => Coord(diceSize - 1 - coord.x, coord.y)
+        case (Down, Front) => Coord(coord.x, diceSize - 1)
+        case (Down, Right) => Coord(coord.y, diceSize - 1)
+        case (Down, Left) => Coord(diceSize - 1 - coord.y, diceSize - 1)
+        case (Down, Back) => Coord(diceSize - 1 - coord.x, diceSize - 1)
         case (Down, Up) => throw new IllegalArgumentException("Cannot convert coordinates from down to up")
         case (Down, Down) => throw new IllegalArgumentException("Cannot convert coordinates from down to down")
     }
@@ -536,32 +536,95 @@ final def changeSide(state: StateP2): Option[StateP2] = {
     val FaceInstance(newFace, transformation) = simpleDiceFace(face, going)
     val newCoordinate = convertCoordinates(coord, face, newFace)
     val newGoing = applyTransformationToFacing(going, transformation)
+    dprintln(s"Changing side from $face to $newFace")
+    dprintln(s"New coordinate: $newCoordinate")
+    dprintln(s"New going: $newGoing")
 
     val destCell = faces(newFace).get(newCoordinate)
+    //dprintln(faces(newFace))
 
     destCell match {
         case Some(Empty(_)) => Some(state.copy(face = newFace, going = newGoing, coord = newCoordinate))
-        case _ => None
+        case x =>
+            dprintln(s"Cannot change side to $newFace, cell $newCoordinate is $x")
+            None
     }
 }
 
 @tailrec
 final def move(state: StateP2, n: Int): StateP2 = {
-    val coords = untilFaceEnd(state.coord, state.going)
-    coords match {
-        case x #:: tail =>
-            val c = faces(state.face).get(x)
-            c match {
-                case Some(Empty(_)) => move(state.copy(coord = x), n - 1)
-                case Some(Wall) => state
-                case _ => state
+    if (n <= 0) {
+        state
+    } else {
+        val coords = untilFaceEnd(state.coord, state.going)
+
+        coords match {
+            case x #:: tail =>
+                dprintln(x)
+                val c = faces(state.face).get(x)
+                dprintln(c)
+                dprintln(state)
+                c match {
+                    case Some(Empty(_)) => move(state.copy(coord = x), n - 1)
+                    case Some(Wall(_)) => state
+                    case x => 
+                        val newState = changeSide(state)
+                        newState match {
+                            case Some(s) => move(s, n - 1)
+                            case None => state
+                        }
+                }
+            case _ =>
+                val newState = changeSide(state)
+                newState match {
+                    case Some(s) => move(s, n - 1)
+                    case None => state
+                }
+                
+        }
+    }
+}
+
+final def printStateP2(state: StateP2): Unit = {
+    println(state)
+    if (debugPrint) {
+        println()
+        println()
+        val grid = faces(state.face)
+        for {
+            y <- 0 until diceSize
+        } {
+            for {
+                x <- 0 until diceSize
+            } {
+                if (state.coord == Coord(x, y)) {
+                    state.going match {
+                        case North => print('^')
+                        case East => print('>')
+                        case South => print('v')
+                        case West => print('<')
+                    }
+                } else {
+                    val chr = grid(Coord(x, y)) match {
+                        case Empty(_) => '.'
+                        case Void => ' '
+                        case Wall(_) => '#'
+                    }
+                    print(chr)
+                }
             }
-        case _ => state
+            println()
+        }
+        println()
+        println(state)
+        println()
     }
 }
 
 final def exec(state: StateP2, instruction: Instruction): StateP2 = {
     val StateP2(face, going, coord) = state
+    printStateP2(state)
+    dprintln(instruction)
 
     instruction match {
         case Move(n) => move(state, n)
@@ -574,4 +637,72 @@ final def exec(state: StateP2, instruction: Instruction): StateP2 = {
     }
 }
 
+final def getGlobalCoord(state: StateP2): Coord = {
+    val StateP2(f, _, coord) = state
+    val face = faces(f)
+
+    face(coord) match {
+        case Empty(coord) => coord
+        case Wall(coord) => coord
+        case _ => throw new IllegalStateException(s"Cannot get global coord from $state")
+    }
+}
+
+final def getGlobalDirection(state: StateP2): Facing = {
+    val StateP2(f, facing, coord) = state
+    val face = faces(f)
+
+    val (prevCoord, nextCoord) = facing match {
+        case North if coord.y == 0 => coord -> Coord(coord.x, coord.y + 1)
+        case East if coord.x == diceSize - 1 => coord -> Coord(coord.x - 1, coord.y)
+        case South if coord.y == diceSize - 1 => coord -> Coord(coord.x, coord.y - 1)
+        case West if coord.x == 0 => coord -> Coord(coord.x + 1, coord.y)
+
+        case North => coord -> Coord(coord.x, coord.y - 1)
+        case East => coord -> Coord(coord.x + 1, coord.y)
+        case South => coord -> Coord(coord.x, coord.y + 1)
+        case West => coord -> Coord(coord.x - 1, coord.y)
+    }
+
+    val prevGlobalCoord = face(prevCoord) match {
+        case Empty(coord) => coord
+        case Wall(coord) => coord
+        case _ => throw new IllegalStateException(s"Cannot get global coord from $state")
+    }
+
+    val nextGlobalCoord = face(nextCoord) match {
+        case Empty(coord) => coord
+        case Wall(coord) => coord
+        case _ => throw new IllegalStateException(s"Cannot get global coord from $state")
+    }
+
+    val diff = Coord(nextGlobalCoord.x - prevGlobalCoord.x, nextGlobalCoord.y - prevGlobalCoord.y)
+    diff match {
+        case Coord(0, 1) => North
+        case Coord(1, 0) => East
+        case Coord(0, -1) => South
+        case Coord(-1, 0) => West
+        case _ => throw new IllegalStateException(s"Cannot get global direction from $state")
+    }
+}
+
+final def score(coord: Coord, facing: Facing): Int = {
+    val Coord(x, y) = coord
+    val facingScore = facing match {
+        case East => 0
+        case South => 1
+        case West => 2
+        case North => 3
+    }
+
+    (x+1) * 4 + (y+1) * 1000 + facingScore
+}
+
+val a = 2
+
 val part2State = instructions.foldLeft(initialP2)(exec)
+val part2Coord = getGlobalCoord(part2State)
+val part2Direction = getGlobalDirection(part2State)
+val part2Score = score(part2Coord, part2Direction)
+
+dprintln(part2State)
